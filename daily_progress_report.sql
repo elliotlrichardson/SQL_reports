@@ -1,3 +1,5 @@
+-- TABLES
+
 -- Pledges
   drop table if exists erichardson.pledgecounts;
 create table erichardson.pledgecounts as (
@@ -301,3 +303,35 @@ create table erichardson.oneononecounts as (
     order by turf
   
   );
+				 
+				 
+-- EXPORT 
+				 
+select p.turf
+    , p.mon_pledges
+    , p.tue_pledges
+    , p.wed_pledges
+    , p.thu_pledges
+    , p.fri_pledges
+    , p.sat_pledges
+    , o.mon_oneonones
+    , o.tue_oneonones
+    , o.wed_oneonones
+    , o.thu_oneonones
+    , o.fri_oneonones
+    , o.sat_oneonones
+    , s.mon_shifts
+    , s.tue_shifts
+    , s.wed_shifts
+    , s.thu_shifts
+    , s.fri_shifts
+    , s.sat_shifts
+    , a.week_active_vols
+    , a.week_vol_leaders
+  from erichardson.pledgecounts p
+    full outer join erichardson.activecounts a using(turf)
+    full outer join erichardson.shiftcounts s using(turf)
+    full outer join erichardson.oneononecounts o using(turf)
+  order by turf asc				 
+				 
+;
