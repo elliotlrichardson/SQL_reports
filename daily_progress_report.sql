@@ -6,7 +6,8 @@
 create table erichardson.pledgecounts as (
  with pledges as (
     with ea_forms as (
-    select nullif(left(right(REGEXP_SUBSTR(upper(marketsource), 'SOURCE__[A-Z][A-Z]-'), 3), 2), '') as state
+    select 
+	nullif(left(right(REGEXP_SUBSTR(upper(marketsource), 'SOURCE__[A-Z][A-Z]-'), 3), 2), '') as state
       , nullif(split_part(REGEXP_SUBSTR(upper(marketsource), 'SOURCE__[A-Z][A-Z]-[0-Z][0-Z][0-Z]?'), '-', 2), '') as turf
       , vanid
       , of.datecreated
@@ -34,9 +35,10 @@ create table erichardson.pledgecounts as (
     select * from p2a_forms union select * from ea_forms
   )
 
-select vanid
- 			, source_turf
-   		, day_canv
+select 
+	vanid
+      , source_turf
+      , day_canv
       , (current_date-(extract(dow from current_date)-1)) as monday
       , (current_date-(extract(dow from current_date)-1))+1 as tuesday
       , (current_date-(extract(dow from current_date)-1))+2 as wednesday
@@ -44,18 +46,24 @@ select vanid
       , (current_date-(extract(dow from current_date)-1))+4 as friday
   		, (current_date-(extract(dow from current_date)-1))+5 as saturday
     from (
-      select a.vanid
+      select 
+	  a.vanid
         , a.geo_state
         , surveyquestionname
         , day_canv
         , date_trunc('week', current_timestamp AT TIME ZONE 'PST'-1) as this_week
-        , case when n.notetext like 'Source:%' and of.datecreated < n.datemodified then nullif(left(right(REGEXP_SUBSTR(upper(notetext), 'SOURCE: [A-Z][A-Z]-'), 3), 2), '') else of.state end as source_state
-        , case when n.notetext like 'Source:%' and of.datecreated < n.datemodified then nullif(split_part(REGEXP_SUBSTR(upper(notetext), 'SOURCE: [A-Z][A-Z]-[0-Z][0-Z][0-Z]?'), '-', 2), '') else of.turf end as source_turf
+        , case when n.notetext like 'Source:%' and of.datecreated < n.datemodified 
+	    then nullif(left(right(REGEXP_SUBSTR(upper(notetext), 'SOURCE: [A-Z][A-Z]-'), 3), 2), '') 
+	    else of.state end as source_state
+        , case when n.notetext like 'Source:%' and of.datecreated < n.datemodified 
+	    then nullif(split_part(REGEXP_SUBSTR(upper(notetext), 'SOURCE: [A-Z][A-Z]-[0-Z][0-Z][0-Z]?'), '-', 2), '') 
+	    else of.turf end as source_turf
         , n.datemodified
         , n.notetext
         , row_number() over (partition by a.vanid order by of.datecreated asc) as row1
       from (
-        select sr.vanid
+        select 
+	    sr.vanid
           , c.state as geo_state
           , sq.surveyquestionname
           , sr.datecanvassed
@@ -82,15 +90,15 @@ select vanid
   
 
   select source_turf as turf
-        , count(distinct case when p.day_canv = p.monday then p.vanid else null end) as mon_pledges    
-		, count(distinct case when p.day_canv = p.tuesday then p.vanid else null end) as tue_pledges 
+    , count(distinct case when p.day_canv = p.monday then p.vanid else null end) as mon_pledges    
+    , count(distinct case when p.day_canv = p.tuesday then p.vanid else null end) as tue_pledges 
     , count(distinct case when p.day_canv = p.wednesday then p.vanid else null end) as wed_pledges     
     , count(distinct case when p.day_canv = p.thursday then p.vanid else null end) as thu_pledges             
     , count(distinct case when p.day_canv = p.friday then p.vanid else null end) as fri_pledges             
     , count(distinct case when p.day_canv = p.saturday then p.vanid else null end) as sat_pledges
-    from pledges p
-    group by turf 
-    order by turf
+ from pledges p
+ group by turf 
+ order by turf
   
   );
   
@@ -98,7 +106,8 @@ select vanid
   drop table if exists erichardson.activecounts;
 create table erichardson.activecounts as (
   with active as (
-    select vanid
+    select 
+	vanid
       , state
       , turf
       , vol_leader
@@ -107,7 +116,8 @@ create table erichardson.activecounts as (
       , date_trunc('week', time-1)-7 as last_week
     from (
       --Everyone who completed an active shift, plus vol leader survey response if applicable
-      select es.vanid
+      select 
+	  es.vanid
         , t.state
         , right(t.turf, 2) as turf
         , l.vol_leader
@@ -139,7 +149,8 @@ create table erichardson.activecounts as (
       select
         turf
       , count(distinct case when shift_week in (this_week, last_week)
-              then a.vanid else null end) as week_active_vols
+              		then a.vanid 
+	      		else null end) as week_active_vols
       from active a
       group by turf
       order by turf
@@ -150,14 +161,18 @@ create table erichardson.activecounts as (
       select 
         turf
       , count(distinct case when shift_week in (this_week, last_week) and vol_leader in ('Confirmed')
-              then a.vanid else null end) as week_vol_leaders
+              		then a.vanid 
+	      		else null end) as week_vol_leaders
       from active a
       group by turf
       order by turf
       
       )
 
-  select turf, week_vol_leaders, week_active_vols
+  select 
+      turf
+    , week_vol_leaders
+    , week_active_vols
   from activevolcounts
   left join volleadercounts using(turf)
    );
@@ -167,8 +182,8 @@ create table erichardson.activecounts as (
 create table erichardson.shiftcounts as (
  with compshifts as (
  select 
-				vanid
-  	  , state
+	vanid
+      , state
       , turf
       , eventrolename
       , eventstatusname
@@ -181,11 +196,12 @@ create table erichardson.shiftcounts as (
       , (current_date-(extract(dow from current_date)-1))+2 as wednesday
       , (current_date-(extract(dow from current_date)-1))+3 as thursday
       , (current_date-(extract(dow from current_date)-1))+4 as friday
-  		, (current_date-(extract(dow from current_date)-1))+5 as saturday
+      , (current_date-(extract(dow from current_date)-1))+5 as saturday
 
  from (
-  select vanid
-  	  , state
+  select 
+	vanid
+      , state
       , turf
       , eventrolename
       , eventstatusname
@@ -194,7 +210,8 @@ create table erichardson.shiftcounts as (
       , date_trunc('day', datetimeoff) as day_canv
       , row_number() over (partition by vanid || eventid || eventroleid || eventshiftid order by modtime desc, eventstatusname asc) as row
     from (
-      select distinct es.vanid
+      select distinct 
+	  es.vanid
         , es.datetimeoffsetbegin
         , es.eventrolename
         , es.eventroleid
@@ -227,24 +244,30 @@ create table erichardson.shiftcounts as (
   )
   
 
-      select 
+ select 
       turf
     , count(distinct case when eventrolename in ('Data Entry/ Admin/ Other', 'Volunteer') and eventstatusname='Completed' and s.day_canv = s.monday
-              then s.vanid||s.eventid||s.eventshiftid  else null end) as mon_shifts          
+              then s.vanid||s.eventid||s.eventshiftid  
+	      else null end) as mon_shifts          
     , count(distinct case when eventrolename in ('Data Entry/ Admin/ Other', 'Volunteer') and eventstatusname='Completed' and s.day_canv = s.tuesday
-              then s.vanid||s.eventid||s.eventshiftid  else null end) as tue_shifts 
+              then s.vanid||s.eventid||s.eventshiftid  
+	      else null end) as tue_shifts 
     , count(distinct case when eventrolename in ('Data Entry/ Admin/ Other', 'Volunteer') and eventstatusname='Completed' and s.day_canv = s.wednesday
-              then s.vanid||s.eventid||s.eventshiftid  else null end) as wed_shifts                
+              then s.vanid||s.eventid||s.eventshiftid  
+	      else null end) as wed_shifts                
     , count(distinct case when eventrolename in ('Data Entry/ Admin/ Other', 'Volunteer') and eventstatusname='Completed' and s.day_canv = s.thursday
-              then s.vanid||s.eventid||s.eventshiftid  else null end) as thu_shifts  
+              then s.vanid||s.eventid||s.eventshiftid  
+	      else null end) as thu_shifts  
     , count(distinct case when eventrolename in ('Data Entry/ Admin/ Other', 'Volunteer') and eventstatusname='Completed' and s.day_canv = s.friday
-              then s.vanid||s.eventid||s.eventshiftid  else null end) as fri_shifts  
+              then s.vanid||s.eventid||s.eventshiftid  
+	      else null end) as fri_shifts  
     , count(distinct case when eventrolename in ('Data Entry/ Admin/ Other', 'Volunteer') and eventstatusname='Completed' and s.day_canv = s.saturday
-              then s.vanid||s.eventid||s.eventshiftid  else null end) as sat_shifts  
+              then s.vanid||s.eventid||s.eventshiftid  
+	      else null end) as sat_shifts  
     
-    from compshifts s
-      group by turf
-      order by turf
+ from compshifts s
+ group by turf
+ order by turf
       );
       
     
@@ -255,7 +278,8 @@ drop table if exists erichardson.oneononecounts;
 create table erichardson.oneononecounts as (
  with oneonones as (
   
-  select vanid
+  select 
+	vanid
       , turf
       , surveyresponsename
       , date_trunc('day', datecanvassed) as day_canv
@@ -264,10 +288,11 @@ create table erichardson.oneononecounts as (
       , (current_date-(extract(dow from current_date)-1))+2 as wednesday
       , (current_date-(extract(dow from current_date)-1))+3 as thursday
       , (current_date-(extract(dow from current_date)-1))+4 as friday
-  		, (current_date-(extract(dow from current_date)-1))+5 as saturday
-    from (
+      , (current_date-(extract(dow from current_date)-1))+5 as saturday
+  from (
       --Everyone tagged with a 1:1 survey response (any type) since start of phase
-      select csr.vanid
+      select 
+	  csr.vanid
         , t.state
         , right(t.turf, 2) as turf
         , sr.surveyresponsename
@@ -292,16 +317,17 @@ create table erichardson.oneononecounts as (
   )
   
   
-    select turf
+  select 
+      turf
     , count(distinct case when o.day_canv = o.monday then o.vanid else null end) as mon_oneonones  
     , count(distinct case when o.day_canv = o.tuesday then o.vanid else null end) as tue_oneonones
     , count(distinct case when o.day_canv = o.wednesday then o.vanid else null end) as wed_oneonones  
     , count(distinct case when o.day_canv = o.thursday then o.vanid else null end) as thu_oneonones  
     , count(distinct case when o.day_canv = o.friday then o.vanid else null end) as fri_oneonones  
     , count(distinct case when o.day_canv = o.saturday then o.vanid else null end) as sat_oneonones
-    from oneonones o
-    group by turf
-    order by turf
+  from oneonones o
+  group by turf
+  order by turf
   
   );
 				 
@@ -309,7 +335,8 @@ create table erichardson.oneononecounts as (
 -- ****** EXPORT ****** --
 
 				 
-select p.turf
+select 
+      p.turf
     , p.mon_pledges
     , p.tue_pledges
     , p.wed_pledges
