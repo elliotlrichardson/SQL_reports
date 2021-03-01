@@ -15,7 +15,7 @@ with
       left join rising.turf t using(vanid)
       left join van.tsm_nextgen_results r using(resultid)
       left join van.tsm_nextgen_users u
-        on u.userid = cc.canvassedby
+     		on u.userid = cc.canvassedby
       left join van.tsm_nextgen_contacts_mym ea using(vanid)
     where t.state = 'ME'
       and cc.contacttypeid = 1
@@ -49,7 +49,7 @@ with
   )
 , signups as (
   select distinct
-	  cr.contactkey
+      cr.contactkey
     , cr.datecanvassed
     , st.datecreated as signupdate
     , su.eventrolename as shifttype
@@ -73,9 +73,11 @@ left join van.tsm_nextgen_publicusers pu
 	on cc.canvassedby=pu.publicuserid
 where cc.canvassedby not in (select userid from van.tsm_nextgen_users)
   )
+  
+  
   select distinct 
-  	  crs.contactkey
-  	, crs.turf
+      crs.contactkey
+    , crs.turf
     , crs.datecanvassed
     , crs.callerid
     , crs.callerfname
@@ -88,10 +90,10 @@ where cc.canvassedby not in (select userid from van.tsm_nextgen_users)
     , vy.surveyresponsename
     , vy.volyesdate
     , vy.vdaydiff
-  	, sus.shifttype
-  	, sus.eventdate
+    , sus.shifttype
+    , sus.eventdate
     , sus.sdaydiff
-  	, datediff(day, vy.volyesdate, sus.signupdate) as vysudaydiff
+    , datediff(day, vy.volyesdate, sus.signupdate) as vysudaydiff
     , pl.date_collected_pledge
     , pl.pdaydiff
   from callresults crs
@@ -104,5 +106,5 @@ where cc.canvassedby not in (select userid from van.tsm_nextgen_users)
     left join publicusers u
       on u.publicuserid = crs.callerid
   where date_part(y, crs.datecanvassed) = 2020
-  and crs.result <> 'Texted'
+  	and crs.result <> 'Texted'
   order by crs.datecanvassed desc
